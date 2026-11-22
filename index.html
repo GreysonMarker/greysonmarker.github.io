@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S — HUD</title>
+<!--
+  JARVIS HUD — Orion's workstream (HUD & interface).
+  Single self-contained file: no build step, no dependencies except
+  Google Fonts (with system fallbacks so it still works offline).
+  Serve it with server.py (in the repo root) — the command deck
+  talks to the real backend over /api/chats. Opening the file
+  directly still renders the HUD, but chat needs the server.
+  See README.md in this folder for the design tokens and motion rules.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* --- JARVIS design tokens (see DESIGN notes in README.md) --- */
+    --bg:            #020810;   /* near-black, blue cast */
+    --bg-deep:       #01040a;
+    --panel:         rgba(4, 22, 38, 0.72);
+    --panel-edge:    rgba(0, 229, 255, 0.28);
+    --cyan:          #00e5ff;   /* primary hologram */
+    --cyan-bright:   #8ff4ff;   /* glow cores, key values */
+    --cyan-mid:      #00a8c8;
+    --cyan-dim:      #0b3a4d;   /* inactive lines */
+    --klein:         #002fa7;   /* glow base / deep blue tint */
+    --gold:          #f5a623;   /* scarce: warnings / attention only */
+    --red:           #ff4d6d;   /* errors only */
+    --ok:            #2ee59d;
+    --text:          #d9f6ff;
+    --muted:         #5f87a0;
+    --font-display:  "Orbitron", "Segoe UI", system-ui, sans-serif;
+    --font-data:     "Share Tech Mono", "SF Mono", Consolas, monospace;
+    --glow:          0 0 18px rgba(0,229,255,.35), 0 0 42px rgba(0,229,255,.12);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:
+      radial-gradient(1200px 700px at 50% 42%, rgba(0,47,167,.20), transparent 60%),
+      radial-gradient(900px 900px at 50% 50%, rgba(0,229,255,.06), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-data);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* faint blueprint grid */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      linear-gradient(rgba(0,229,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,.035) 1px, transparent 1px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(circle at 50% 45%, black 30%, transparent 78%);
+  }
+  /* CRT scanlines + a travelling scan beam — the screen always feels alive */
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:60;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 3px);
+    mix-blend-mode:overlay;
+  }
+  .scanbeam{
+    position:fixed; left:0; right:0; height:110px; top:-120px; z-index:59; pointer-events:none;
+    background:linear-gradient(180deg, transparent, rgba(0,229,255,.055), transparent);
+    animation:beam 7s linear infinite;
+  }
+  @keyframes beam{ to{ transform:translateY(120vh); } }
+
+  /* ---------- layout ---------- */
+  .hud{
+    position:relative; z-index:2; height:100vh; height:100dvh;
+    display:grid; gap:14px; padding:16px 18px;
+    grid-template-rows:auto 1fr auto;
+    grid-template-columns:300px 1fr 300px;
+    grid-template-areas:
+      "top    top    top"
+      "left   center right"
+      "bottom bottom bottom";
+  }
+  @media (max-width: 980px){
+    .hud{ grid-template-columns:1fr; grid-template-areas:"top" "center" "bottom"; overflow-y:auto; }
+    .col-left,.col-right{ display:none; } /* small screens: core + command first */
+  }
+
+  /* ---------- panels ---------- */
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--panel-edge);
+    padding:12px 14px;
+    position:relative;
+    backdrop-filter:blur(3px);
+    clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+    animation:panel-in .8s cubic-bezier(.2,.9,.25,1) both;
+  }
+  .panel h2{
+    font-family:var(--font-display); font-size:11px; font-weight:700;
+    letter-spacing:.32em; text-transform:uppercase; color:var(--cyan);
+    margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .panel h2 .dot{ width:7px; height:7px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok); animation:blink 2.4s infinite; }
+  @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.35} }
+  @keyframes panel-in{ from{ opacity:0; transform:translateY(10px) scale(.985);} to{ opacity:1; transform:none;} }
+  .col-left{ grid-area:left; display:flex; flex-direction:column; gap:14px; min-height:0; }
+  .col-right{ grid-area:right; display:flex; flex-direction:column; gap:14px; min-height:0; }
+  .col-left .panel:nth-child(2){ animation-delay:.12s } .col-right .panel:nth-child(1){ animation-delay:.08s }
+  .col-right .panel:nth-child(2){ animation-delay:.16s } .col-left .panel:nth-child(3){ animation-delay:.2s }
+
+  .row{ display:flex; justify-content:space-between; font-size:12.5px; padding:3.5px 0; color:var(--muted); letter-spacing:.04em; }
+  .row b{ color:var(--text); font-weight:400; }
+  .row b.cy{ color:var(--cyan-bright); }
+  .bar{ height:5px; background:var(--cyan-dim); margin:2px 0 9px; position:relative; overflow:hidden; }
+  .bar i{ position:absolute; inset:0; right:auto; background:linear-gradient(90deg, var(--cyan-mid), var(--cyan)); box-shadow:var(--glow); transition:width .8s cubic-bezier(.2,.9,.25,1); }
+  .bar.gold i{ background:linear-gradient(90deg, #a86e0a, var(--gold)); }
+
+  .log{ font-size:11.5px; line-height:1.75; color:#9fd8ea; overflow:hidden; flex:1; min-height:86px;
+        -webkit-mask-image:linear-gradient(180deg, transparent, black 18%); mask-image:linear-gradient(180deg, transparent, black 18%); }
+  .log .t{ color:var(--cyan-mid); } .log .warn{ color:var(--gold); }
+
+  /* ---------- top bar ---------- */
+  .topbar{ grid-area:top; display:flex; justify-content:space-between; align-items:flex-start; animation:panel-in .7s both; }
+  .brand h1{
+    font-family:var(--font-display); font-weight:900; font-size:clamp(22px, 3.4vw, 34px);
+    letter-spacing:.42em; color:var(--cyan-bright); text-shadow:var(--glow); line-height:1;
+  }
+  .brand p{ font-size:11px; letter-spacing:.3em; color:var(--muted); text-transform:uppercase; margin-top:6px; }
+  .clockbox{ text-align:right; }
+  .clock{ font-family:var(--font-display); font-size:clamp(20px,2.6vw,28px); font-weight:700; letter-spacing:.18em; color:var(--text); }
+  .clock .ms{ color:var(--cyan); font-size:.62em; }
+  .date{ font-size:11px; letter-spacing:.28em; color:var(--muted); text-transform:uppercase; margin-top:5px; }
+
+  /* ---------- center core ---------- */
+  .center{ grid-area:center; position:relative; display:flex; align-items:center; justify-content:center; min-height:320px; }
+  #core{ width:min(62vh, 92%); height:auto; aspect-ratio:1; filter:drop-shadow(0 0 26px rgba(0,229,255,.22)); }
+  .core-label{ position:absolute; text-align:center; pointer-events:none; }
+  .core-label .state{
+    font-family:var(--font-display); font-weight:700; letter-spacing:.38em; font-size:clamp(13px,1.8vw,18px);
+    color:var(--cyan-bright); text-transform:uppercase; text-shadow:var(--glow); text-indent:.38em;
+  }
+  .core-label .sub{ font-size:11px; letter-spacing:.24em; color:var(--muted); margin-top:7px; text-transform:uppercase; }
+  .corner{ position:absolute; width:26px; height:26px; border:2px solid var(--cyan); opacity:.75; }
+  .corner.tl{ top:2%; left:2%; border-right:0; border-bottom:0; } .corner.tr{ top:2%; right:2%; border-left:0; border-bottom:0; }
+  .corner.bl{ bottom:2%; left:2%; border-right:0; border-top:0; } .corner.br{ bottom:2%; right:2%; border-left:0; border-top:0; }
+
+  /* ---------- bottom command deck ---------- */
+  .deck{ grid-area:bottom; animation:panel-in .8s .25s both; }
+  .convo{ font-size:13px; line-height:1.7; color:#bfeeff; margin-bottom:10px; max-height:168px; overflow-y:auto; padding-right:6px; }
+  .convo .turn{ margin-bottom:7px; white-space:pre-wrap; word-break:break-word; }
+  .convo .who{ color:var(--cyan); letter-spacing:.18em; font-size:11px; text-transform:uppercase; margin-right:8px; }
+  .convo .turn.me .who{ color:var(--gold); }
+  .convo::-webkit-scrollbar{ width:5px; } .convo::-webkit-scrollbar-thumb{ background:var(--cyan-dim); }
+  form{ display:flex; gap:10px; }
+  input{
+    flex:1; background:rgba(0,20,34,.85); border:1px solid var(--panel-edge); color:var(--text);
+    font-family:var(--font-data); font-size:14px; padding:12px 14px; outline:none; letter-spacing:.03em;
+  }
+  input:focus{ border-color:var(--cyan); box-shadow:var(--glow); }
+  input::placeholder{ color:var(--muted); letter-spacing:.14em; text-transform:uppercase; font-size:12px; }
+  button{
+    font-family:var(--font-display); letter-spacing:.26em; font-size:12px; text-transform:uppercase;
+    background:rgba(0,229,255,.1); color:var(--cyan-bright); border:1px solid var(--cyan);
+    padding:0 22px; cursor:pointer; transition:.2s;
+  }
+  button:hover{ background:rgba(0,229,255,.24); box-shadow:var(--glow); }
+
+  /* ---------- boot sequence ---------- */
+  #boot{
+    position:fixed; inset:0; z-index:100; background:var(--bg-deep);
+    display:flex; align-items:center; justify-content:center; transition:opacity .7s, visibility .7s;
+  }
+  #boot.done{ opacity:0; visibility:hidden; }
+  #boot .lines{ font-size:13px; line-height:2.1; color:var(--cyan); letter-spacing:.12em; min-width:min(520px, 86vw); }
+  #boot .lines div{ opacity:0; animation:bootline .3s forwards; }
+  #boot .lines b{ color:var(--cyan-bright); font-family:var(--font-display); letter-spacing:.34em; font-size:19px; }
+  @keyframes bootline{ to{ opacity:1; } }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="scanbeam"></div>
+
+<div id="boot" aria-hidden="true"><div class="lines" id="bootLines"></div></div>
+
+<main class="hud">
+  <header class="topbar">
+    <div class="brand">
+      <h1>J.A.R.V.I.S</h1>
+      <p>Just A Rather Very Intelligent System</p>
+    </div>
+    <div class="clockbox">
+      <div class="clock"><span id="clock">00:00:00</span><span class="ms" id="clockMs">.000</span></div>
+      <div class="date" id="dateLine">—</div>
+    </div>
+  </header>
+
+  <aside class="col-left">
+    <section class="panel">
+      <h2>System <span class="dot"></span></h2>
+      <div class="row"><span>CORE</span><b class="cy">ONLINE</b></div>
+      <div class="row"><span>MODEL</span><b id="modelName">OLLAMA · LOCAL</b></div>
+      <div class="row"><span>MEMORY</span><b id="memCount">— ITEMS</b></div>
+      <div class="row"><span>TASKS OPEN</span><b id="taskCount">—</b></div>
+      <div class="row"><span>MODE</span><b class="cy">STUDY</b></div>
+    </section>
+    <section class="panel">
+      <h2>Power</h2>
+      <div class="row"><span>ARC OUTPUT</span><b id="arcVal">98%</b></div>
+      <div class="bar"><i id="arcBar" style="width:98%"></i></div>
+      <div class="row"><span>NEURAL LOAD</span><b id="neuVal">34%</b></div>
+      <div class="bar"><i id="neuBar" style="width:34%"></i></div>
+      <div class="row"><span>UPLINK</span><b id="upVal">12%</b></div>
+      <div class="bar gold"><i id="upBar" style="width:12%"></i></div>
+    </section>
+    <section class="panel" style="flex:1; display:flex; flex-direction:column;">
+      <h2>Activity</h2>
+      <div class="log" id="log"></div>
+    </section>
+  </aside>
+
+  <section class="center">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <canvas id="core" width="760" height="760" aria-label="Jarvis core visualisation"></canvas>
+    <div class="core-label">
+      <div class="state" id="stateLabel">Standby</div>
+      <div class="sub" id="stateSub">Awaiting input</div>
+    </div>
+  </section>
+
+  <aside class="col-right">
+    <section class="panel">
+      <h2>Diagnostics</h2>
+      <div class="row"><span>VOICE</span><b>READY</b></div>
+      <div class="row"><span>VISION</span><b>READY</b></div>
+      <div class="row"><span>NETWORK</span><b class="cy">LOCAL ONLY</b></div>
+      <div class="row"><span>PRIVACY</span><b class="cy">LOCKED</b></div>
+    </section>
+    <section class="panel">
+      <h2>Study Session</h2>
+      <div class="row"><span>SUBJECT</span><b>—</b></div>
+      <div class="row"><span>TOPIC</span><b>—</b></div>
+      <div class="row"><span>QUIZ SCORE</span><b>—</b></div>
+      <div class="row"><span>FOCUS TIMER</span><b id="focusTimer">00:00</b></div>
+    </section>
+    <section class="panel" style="flex:1;">
+      <h2>Waveform</h2>
+      <canvas id="wave" width="268" height="86" style="width:100%; height:86px;"></canvas>
+    </section>
+  </aside>
+
+  <section class="deck panel">
+    <div class="convo" id="convo"></div>
+    <form id="cmdForm">
+      <input id="cmd" autocomplete="off" spellcheck="false" placeholder="Type a command or ask a question…">
+      <button type="submit">Send</button>
+      <button type="button" id="newChatBtn" title="Start a fresh chat">New Chat</button>
+    </form>
+  </section>
+</main>
+
+<script>
+"use strict";
+/* ============ helpers ============ */
+const $ = s => document.querySelector(s);
+const pad = (n, l=2) => String(n).padStart(l, "0");
+const rand = (a, b) => a + Math.random() * (b - a);
+
+/* ============ boot sequence ============ */
+const bootLines = ["<b>J.A.R.V.I.S</b>", "INITIALISING HOLOGRAPHIC INTERFACE …", "CORE … OK", "MEMORY … OK", "LOCAL MODEL LINK … STANDBY", "ALL SYSTEMS NOMINAL"];
+bootLines.forEach((txt, i) => {
+  const d = document.createElement("div");
+  d.innerHTML = txt; d.style.animationDelay = (i * 0.22) + "s";
+  $("#bootLines").appendChild(d);
+});
+setTimeout(() => $("#boot").classList.add("done"), bootLines.length * 220 + 650);
+
+/* ============ clock (with milliseconds — always moving, like the films) ============ */
+function tickClock(){
+  const now = new Date();
+  $("#clock").textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  $("#clockMs").textContent = "." + pad(now.getMilliseconds(), 3);
+  $("#dateLine").textContent = now.toLocaleDateString(undefined, { weekday:"long", day:"2-digit", month:"long", year:"numeric" });
+  requestAnimationFrame(tickClock);
+}
+requestAnimationFrame(tickClock);
+
+/* focus timer */
+const t0 = Date.now();
+setInterval(() => {
+  const s = Math.floor((Date.now() - t0) / 1000);
+  $("#focusTimer").textContent = `${pad(Math.floor(s/60))}:${pad(s%60)}`;
+}, 1000);
+
+/* ============ activity log ============ */
+const logEl = $("#log");
+function logLine(text, warn=false){
+  const now = new Date();
+  const d = document.createElement("div");
+  d.innerHTML = `<span class="t">${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}</span> <span class="${warn ? "warn" : ""}">${text}</span>`;
+  logEl.appendChild(d);
+  while (logEl.children.length > 9) logEl.removeChild(logEl.firstChild);
+}
+["Interface online", "Rendering core at 60 fps", "Study mode armed", "Listening for input"].forEach((t, i) => setTimeout(() => logLine(t), 900 + i * 500));
+setInterval(() => logLine("Background scan complete"), 14000);
+
+/* drifting gauges */
+setInterval(() => {
+  const arc = Math.round(rand(94, 100)), neu = Math.round(rand(22, 58)), up = Math.round(rand(6, 30));
+  $("#arcVal").textContent = arc + "%"; $("#arcBar").style.width = arc + "%";
+  $("#neuVal").textContent = neu + "%"; $("#neuBar").style.width = neu + "%";
+  $("#upVal").textContent = up + "%";  $("#upBar").style.width = up + "%";
+}, 2600);
+
+/* ============ the core: layered rotating rings ============
+   Motion rules (from the films): every ring moves at its own speed,
+   neighbours counter-rotate, nothing ever sits still, and the core
+   "breathes" — pulsing harder/faster while Jarvis is speaking.   */
+const cv = $("#core"), ctx = cv.getContext("2d");
+let state = "idle";               // idle | listening | thinking | speaking
+const stateText = {
+  idle:     ["Standby",   "Awaiting input"],
+  listening:["Listening", "Audio channel open"],
+  thinking: ["Processing","Working on it"],
+  speaking: ["Jarvis",    "Responding"]
+};
+function setState(s){
+  state = s;
+  $("#stateLabel").textContent = stateText[s][0];
+  $("#stateSub").textContent = stateText[s][1];
+}
+const CYAN = "#00e5ff", BRIGHT = "#8ff4ff", MID = "#00a8c8", DIM = "rgba(0,168,200,.35)";
+function arcRing(r, frac, a0, color, width, dash){
+  ctx.beginPath();
+  ctx.strokeStyle = color; ctx.lineWidth = width;
+  ctx.setLineDash(dash || []);
+  ctx.arc(0, 0, r, a0, a0 + frac * Math.PI * 2);
+  ctx.stroke(); ctx.setLineDash([]);
+}
+function drawCore(t){
+  const W = cv.width, C = W / 2;
+  ctx.clearRect(0, 0, W, W);
+  ctx.save(); ctx.translate(C, C);
+  const secs = t / 1000;
+  // breathing: idle is slow & shallow, speaking is faster & deeper
+  const breatheSpeed = state === "speaking" ? 5.2 : state === "thinking" ? 3.4 : 1.4;
+  const breatheDepth = state === "idle" ? 0.03 : 0.075;
+  const breathe = 1 + Math.sin(secs * breatheSpeed) * breatheDepth;
+
+  // outer tick ring (rotates very slowly)
+  ctx.save(); ctx.rotate(secs * 0.05);
+  for (let i = 0; i < 72; i++){
+    const a = i / 72 * Math.PI * 2, long = i % 6 === 0;
+    ctx.beginPath(); ctx.strokeStyle = i % 6 === 0 ? MID : DIM; ctx.lineWidth = long ? 3 : 2;
+    ctx.moveTo(Math.cos(a) * 348, Math.sin(a) * 348);
+    ctx.lineTo(Math.cos(a) * (long ? 322 : 334), Math.sin(a) * (long ? 322 : 334));
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // segmented rings — alternating directions, JARVIS-style broken arcs
+  arcRing(306, .72,  secs *  .22, CYAN, 10, [46, 14, 120, 20]);
+  arcRing(282, .55, -secs *  .34, MID,   5);
+  arcRing(258, .85,  secs *  .16, DIM,  16, [90, 26]);
+  arcRing(232, .40, -secs *  .55, BRIGHT, 4);
+  arcRing(210, .66,  secs *  .28, MID,   8, [30, 18]);
+
+  // orbiting marker on the outer ring
+  const oa = secs * .5;
+  ctx.beginPath(); ctx.fillStyle = BRIGHT;
+  ctx.shadowColor = CYAN; ctx.shadowBlur = 18;
+  ctx.arc(Math.cos(oa) * 306, Math.sin(oa) * 306, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // radar sweep wedge
+  const sweep = ctx.createConicGradient ? ctx.createConicGradient(secs * .7, 0, 0) : null;
+  if (sweep){
+    sweep.addColorStop(0, "rgba(0,229,255,.14)"); sweep.addColorStop(.12, "rgba(0,229,255,0)"); sweep.addColorStop(1, "rgba(0,229,255,0)");
+    ctx.beginPath(); ctx.fillStyle = sweep; ctx.moveTo(0, 0); ctx.arc(0, 0, 300, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // inner core — layered glow + bright heart, scaled by the breath
+  const R = 118 * breathe;
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 1.9);
+  g.addColorStop(0, "rgba(143,244,255,.95)");
+  g.addColorStop(.28, "rgba(0,229,255,.55)");
+  g.addColorStop(.62, "rgba(0,120,180,.16)");
+  g.addColorStop(1, "rgba(0,47,167,0)");
+  ctx.beginPath(); ctx.fillStyle = g; ctx.arc(0, 0, R * 1.9, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.strokeStyle = CYAN; ctx.lineWidth = 2.5;
+  ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.strokeStyle = DIM; ctx.lineWidth = 10;
+  ctx.setLineDash([4, 9]); ctx.arc(0, 0, R * .78, -secs * .9, -secs * .9 + Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+
+  ctx.restore();
+  requestAnimationFrame(drawCore);
+}
+requestAnimationFrame(drawCore);
+
+/* ============ waveform (speaking = lively, idle = gentle) ============ */
+const wv = $("#wave"), wctx = wv.getContext("2d");
+function drawWave(t){
+  wctx.clearRect(0, 0, wv.width, wv.height);
+  wctx.beginPath(); wctx.strokeStyle = CYAN; wctx.lineWidth = 2; wctx.shadowColor = CYAN; wctx.shadowBlur = 8;
+  const amp = state === "speaking" ? 30 : state === "thinking" ? 16 : 7;
+  for (let x = 0; x <= wv.width; x += 3){
+    const y = wv.height / 2 + Math.sin(x * .05 + t * .004) * amp * Math.sin(x / wv.width * Math.PI);
+    x === 0 ? wctx.moveTo(x, y) : wctx.lineTo(x, y);
+  }
+  wctx.stroke(); wctx.shadowBlur = 0;
+  requestAnimationFrame(drawWave);
+}
+requestAnimationFrame(drawWave);
+
+/* ============ command deck — wired to server.py ============
+   On load (and on "New Chat") the HUD asks the server for a fresh
+   chat: POST /api/chats creates a new backend ChatSession. Every
+   message then goes to POST /api/chats/<id>/messages, which calls
+   session.reply(db, message) on that same session and returns the
+   backend's reply. Chats are separated per visitor by the server
+   (jarvis_uid cookie) — this page never sees another user's chats. */
+const convo = $("#convo");
+let chatId = null;
+let staticMode = false;
+
+function addTurn(who, text){
+  const d = document.createElement("div");
+  d.className = "turn" + (who === "You" ? " me" : "");
+  const label = document.createElement("span");
+  label.className = "who"; label.textContent = who;
+  d.appendChild(label);
+  const body = document.createTextNode(text);
+  d.appendChild(body);
+  convo.appendChild(d);
+  convo.scrollTop = convo.scrollHeight;
+  return body; // callers can keep writing into this turn (streaming)
+}
+function updateCounts(data){
+  if (typeof data.memories === "number") $("#memCount").textContent = data.memories + " ITEMS";
+  if (typeof data.tasks === "number") $("#taskCount").textContent = data.tasks;
+}
+async function api(path, options){
+  const r = await fetch(path, { headers: { "Content-Type": "application/json" }, ...options });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+  return data;
+}
+async function newChat(){
+  setState("thinking");
+  try {
+    const data = await api("/api/chats", { method: "POST", body: "{}" });
+    chatId = data.chat_id;
+    updateCounts(data);
+    convo.innerHTML = "";
+    addTurn("Jarvis", "At your service. New chat open — ask me to explain a topic, or type /help.");
+    logLine("New chat session created");
+    // Speed: start loading the model NOW, in the background, so the
+    // first real question doesn't pay the model-load wait.
+    fetch("/api/warm", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then(() => logLine("Model warm-up requested"))
+      .catch(() => {});
+    setState("idle");
+  } catch (err) {
+    // Static hosting (e.g. GitHub Pages) has no server to call, so the
+    // HUD runs in local mode: the backend's offline tools work right
+    // here in the browser; model conversation still needs the server.
+    chatId = null;
+    staticMode = true;
+    convo.innerHTML = "";
+    addTurn("Jarvis", "I'm here. What's on your mind?");
+    logLine("Local mode — offline tools on this device", true);
+    updateLocalCounts();
+    setState("idle");
+  }
+}
+/* ============ local mode (static hosting, no server) ============
+   Mirrors jarvis.py's offline behaviour in the browser: memories and
+   tasks persist on this device; counters/checklists/shortcuts live
+   for this chat only, exactly like a backend ChatSession. Plain
+   conversation needs the model, so it points back to the server. */
+const HELP_TEXT = "/remember TEXT | /memories | /task TEXT | /tasks | /done ID | /tools | /build DESCRIPTION | /learn TOPIC | /new | /help | /quit";
+let localTools = {};
+function localItems(){ try { return JSON.parse(localStorage.getItem("jarvis.items") || "[]"); } catch { return []; } }
+function saveLocalItems(items){ localStorage.setItem("jarvis.items", JSON.stringify(items)); }
+function updateLocalCounts(){
+  const items = localItems();
+  $("#memCount").textContent = items.filter(i => i.kind === "memory" && !i.done).length + " ITEMS";
+  $("#taskCount").textContent = items.filter(i => i.kind === "task" && !i.done).length;
+}
+function localCommand(line){
+  const [name, ...rest] = line.split(" ");
+  const value = rest.join(" ").trim();
+  const items = localItems();
+  if (name === "/remember" || name === "/task") {
+    if (!value) return "What would you like me to save?";
+    const kind = name === "/remember" ? "memory" : "task";
+    const id = items.reduce((m, i) => Math.max(m, i.id), 0) + 1;
+    items.push({ id, kind, body: value, done: false });
+    saveLocalItems(items); updateLocalCounts();
+    return `Saved ${kind} #${id}.`;
+  }
+  if (name === "/memories" || name === "/tasks") {
+    const kind = name === "/memories" ? "memory" : "task";
+    const rows = items.filter(i => i.kind === kind && !i.done);
+    return rows.map(i => `${i.id}. ${i.body}`).join("\n") || "Nothing on file.";
+  }
+  if (name === "/done") {
+    const item = items.find(i => i.id === Number(value) && i.kind === "task" && !i.done);
+    if (!item) return "No open task with that ID.";
+    item.done = true; saveLocalItems(items); updateLocalCounts();
+    return "Marked complete.";
+  }
+  return HELP_TEXT;
+}
+function localReply(line){
+  line = line.trim();
+  if (line === "/new") { localTools = {}; return "Fresh chat ready."; }
+  if (line === "/tools") return Object.keys(localTools).join(", ") || "No custom tools in this chat.";
+  if (line === "/help") return HELP_TEXT + "\nCreate a counter or checklist named NAME, or /tool shortcut NAME: instructions. Use !NAME to run it.";
+  const create = line.match(/^(?:\/tool|(?:create|make|add) (?:me )?(?:a |an )?)\s*(counter|scorekeeper|checklist|shortcut)\s+(?:(?:called|named)\s+)?([a-z][a-z0-9_-]{0,30})(?:\s*:\s*(.{1,1000}))?[.!]?$/i);
+  if (create) {
+    const kind = create[1].toLowerCase(), name = create[2].toLowerCase(), instruction = create[3];
+    if (localTools[name]) return "That tool name is already in use.";
+    if (kind === "shortcut" && !instruction) return "Add a colon and the instructions for your shortcut.";
+    localTools[name] = { kind, instruction, values: [] };
+    const usage = { scorekeeper: "+3 or -1", counter: "+3 or -1", checklist: "add ITEM or done NUMBER", shortcut: "your input" };
+    return `Created ${name} for this chat. Try !${name} ${usage[kind]}.`;
+  }
+  if (line.startsWith("!")) {
+    const [rawName, ...rest] = line.slice(1).split(" ");
+    const name = rawName.toLowerCase(), arg = rest.join(" ").trim();
+    const tool = localTools[name];
+    if (!tool) return "Unknown chat tool. Type /tools to list them.";
+    if (tool.kind === "shortcut") return localReplyPlain(`${tool.instruction}\nInput: ${arg}`);
+    if (tool.kind === "checklist") {
+      if (arg.startsWith("add ") && arg.slice(4).trim()) tool.values.push([arg.slice(4).trim(), false]);
+      else if (/^done [0-9]{1,3}$/.test(arg)) {
+        const idx = Number(arg.slice(5)) - 1;
+        if (!(idx >= 0 && idx < tool.values.length)) return "Unknown item number.";
+        tool.values[idx][1] = true;
+      } else if (arg) return "Use add ITEM or done NUMBER.";
+      return tool.values.map((v, i) => `${i + 1}. [${v[1] ? "x" : " "}] ${v[0]}`).join("\n") || "Empty checklist.";
+    }
+    if (arg && !/^[+-]?[0-9]{1,9}$/.test(arg)) return "Enter a signed whole number, or omit it to see the total.";
+    const total = (tool.values[0] || 0) + Number(arg || 0);
+    tool.values = [total];
+    return `${name}: ${total}`;
+  }
+  if (line.startsWith("/")) return localCommand(line);
+  return localReplyPlain(line);
+}
+function localReplyPlain(line){
+  return "On this address I'm running without my model brain — my offline tools all work (try /help), but conversation needs the Jarvis server running. That's the next step to plug in here.";
+}
+
+$("#newChatBtn").addEventListener("click", () => { if (staticMode) { localTools = {}; convo.innerHTML = ""; addTurn("Jarvis", "I'm here. What's on your mind?"); logLine("New chat session created"); } else newChat(); });
+newChat();
+
+$("#cmdForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const input = $("#cmd"), text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  addTurn("You", text);
+  logLine("Input received");
+  if (staticMode) {
+    setState("thinking");
+    const out = addTurn("Jarvis", "");
+    setTimeout(() => {
+      setState("speaking");
+      out.textContent = localReply(text);
+      logLine("Response rendered");
+      setTimeout(() => setState("idle"), 900);
+    }, 450);
+    return;
+  }
+  if (!chatId) { addTurn("Jarvis", "No open chat — starting one now, then try again."); await newChat(); return; }
+  setState("thinking");
+  const out = addTurn("Jarvis", "");
+  try {
+    // Streaming endpoint: status events while Jarvis works, then the
+    // reply arrives in chunks and is typed onto the screen.
+    const r = await fetch(`/api/chats/${chatId}/stream`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+    if (!r.ok || !r.body) throw new Error("stream unavailable");
+    const reader = r.body.getReader(), decoder = new TextDecoder();
+    let buffer = "", gotChunk = false, doneData = null;
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split("\n\n");
+      buffer = events.pop();
+      for (const raw of events) {
+        const line = raw.split("\n").find(l => l.startsWith("data: "));
+        if (!line) continue;
+        const ev = JSON.parse(line.slice(6));
+        if (ev.type === "chunk") { gotChunk = true; setState("speaking"); out.textContent += ev.text; convo.scrollTop = convo.scrollHeight; }
+        else if (ev.type === "done") { doneData = ev; }
+        else if (ev.type === "error") { throw new Error(ev.text); }
+      }
+    }
+    if (!gotChunk && doneData) out.textContent = doneData.reply;
+    if (doneData) updateCounts(doneData);
+    logLine("Response rendered");
+    setTimeout(() => setState("idle"), 900);
+  } catch (err) {
+    // Fall back to the plain endpoint once if streaming failed early.
+    if (!out.textContent) {
+      try {
+        const data = await api(`/api/chats/${chatId}/messages`, { method: "POST", body: JSON.stringify({ message: text }) });
+        setState("speaking");
+        out.textContent = data.reply;
+        updateCounts(data);
+        logLine("Response rendered");
+        setTimeout(() => setState("idle"), 900);
+        return;
+      } catch (err2) { err = err2; }
+    }
+    setState("idle");
+    if (!out.textContent) out.textContent = "That message didn't get through: " + err.message;
+    logLine("Message failed", true);
+    if (/No such chat/.test(err.message)) { chatId = null; }
+  }
+});
+$("#cmd").addEventListener("focus", () => { if (state === "idle") setState("listening"); });
+$("#cmd").addEventListener("blur",  () => { if (state === "listening") setState("idle"); });
+</script>
+</body>
+</html>
