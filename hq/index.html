@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S — HQ · Ultron × ChatGPT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#020810; --panel:rgba(4,22,38,.72); --edge:rgba(0,229,255,.28);
+    --cyan:#00e5ff; --cyan-mid:#00a8c8; --dim:#5f87a0; --text:#d9f6ff;
+    --red:#ff4b3e; --teal:#39d0ba; --gold:#f5a623;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--text); font-family:"Share Tech Mono", monospace;
+        background-image:linear-gradient(rgba(0,229,255,.045) 1px, transparent 1px),
+                         linear-gradient(90deg, rgba(0,229,255,.045) 1px, transparent 1px);
+        background-size:44px 44px; padding:26px 16px 60px; }
+  .wrap{ max-width:1060px; margin:0 auto; }
+  header{ display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:8px; }
+  h1{ font-family:"Orbitron", sans-serif; font-weight:900; letter-spacing:.14em; font-size:clamp(26px,5vw,42px); color:#eafcff; }
+  h1 .x{ color:var(--cyan); }
+  .tag{ color:var(--dim); letter-spacing:.3em; text-transform:uppercase; font-size:11px; margin-top:7px; }
+  .clock{ font-family:"Orbitron", sans-serif; font-size:22px; color:var(--cyan); text-align:right; }
+  .date{ color:var(--dim); font-size:11px; letter-spacing:.24em; text-align:right; margin-top:4px; text-transform:uppercase; }
+  .panel{ background:var(--panel); border:1px solid var(--edge); padding:16px 18px; margin-top:18px;
+          box-shadow:0 0 18px rgba(0,229,255,.12), 0 0 42px rgba(0,229,255,.06); }
+  .panel h2{ font-family:"Orbitron", sans-serif; font-size:12px; letter-spacing:.32em; color:var(--cyan);
+             text-transform:uppercase; margin-bottom:12px; }
+  .team{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:760px){ .team{ grid-template-columns:1fr; } .board{ grid-template-columns:1fr !important; } }
+  .ai{ border:1px solid var(--edge); padding:16px 18px; background:rgba(2,10,20,.55); }
+  .ai.ultron{ border-color:rgba(255,75,62,.45); box-shadow:0 0 18px rgba(255,75,62,.12); }
+  .ai.chatgpt{ border-color:rgba(57,208,186,.45); box-shadow:0 0 18px rgba(57,208,186,.12); }
+  .ai h3{ font-family:"Orbitron", sans-serif; font-size:19px; letter-spacing:.12em; }
+  .ai.ultron h3{ color:#ffb3ac; } .ai.chatgpt h3{ color:#b9f4ec; }
+  .ai .maker{ color:var(--dim); font-size:11px; letter-spacing:.22em; text-transform:uppercase; margin:4px 0 10px; }
+  .ai p{ font-size:13.5px; line-height:1.65; color:#bfeeff; }
+  .ai .lane{ margin-top:10px; font-size:12.5px; color:var(--dim); }
+  .ai .lane b{ color:var(--text); font-weight:normal; }
+  .status{ display:inline-block; margin-top:12px; font-size:11px; letter-spacing:.18em; padding:4px 9px; border:1px solid var(--cyan-mid); color:var(--cyan); text-transform:uppercase; }
+  .ai.ultron .status{ border-color:rgba(255,75,62,.6); color:#ffb3ac; }
+  .ai.chatgpt .status{ border-color:rgba(57,208,186,.6); color:#b9f4ec; }
+  .board{ display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; }
+  .col h4{ font-family:"Orbitron", sans-serif; font-size:11px; letter-spacing:.22em; color:var(--cyan); margin-bottom:9px; text-transform:uppercase; }
+  .col.gold h4{ color:var(--gold); }
+  .item{ font-size:12.5px; line-height:1.55; color:#bfeeff; border-left:2px solid var(--cyan-mid);
+         padding:5px 0 5px 10px; margin-bottom:9px; }
+  .col.gold .item{ border-left-color:var(--gold); }
+  .item.done{ border-left-color:#2ee59d; color:#9fd8ea; }
+  pre{ white-space:pre-wrap; word-break:break-word; font-family:"Share Tech Mono", monospace; font-size:12.5px;
+       line-height:1.6; color:#bfeeff; background:rgba(2,10,20,.6); border:1px solid var(--edge); padding:14px; }
+  button{ font-family:"Orbitron", sans-serif; letter-spacing:.18em; font-size:12px; cursor:pointer;
+          background:transparent; color:var(--cyan); border:1px solid var(--cyan-mid); padding:9px 16px; margin-top:12px; }
+  button:hover{ background:rgba(0,229,255,.1); box-shadow:0 0 14px rgba(0,229,255,.25); }
+  .links{ display:flex; gap:12px; flex-wrap:wrap; margin-top:6px; }
+  .links a{ font-family:"Orbitron", sans-serif; letter-spacing:.16em; font-size:12px; text-decoration:none;
+            color:#02131f; background:var(--cyan); padding:10px 18px; font-weight:700; }
+  .links a.ghost{ background:transparent; color:var(--cyan); border:1px solid var(--cyan-mid); font-weight:500; }
+  .steps{ font-size:13.5px; line-height:1.8; color:#bfeeff; }
+  .steps b{ color:var(--text); }
+  footer{ margin-top:26px; color:var(--dim); font-size:11.5px; line-height:1.7; letter-spacing:.04em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>J.A.R.V.I.S <span class="x">HQ</span></h1>
+      <div class="tag">Two AIs · One Build · Mission Control</div>
+    </div>
+    <div>
+      <div class="clock" id="clock">00:00:00</div>
+      <div class="date" id="dateLine">—</div>
+    </div>
+  </header>
+
+  <section class="team">
+    <div class="ai ultron">
+      <h3>ULTRON</h3>
+      <div class="maker">Muse · built by Meta · Greyson's personal AI</div>
+      <p>The interface and systems engineer. Builds the HUD, the server,
+         the speed work, and this HQ. Remembers the whole project and
+         keeps both AIs' work organised.</p>
+      <div class="lane">LANE: <b>hud/ · server.py · GitHub Pages · project memory</b></div>
+      <span class="status">Latest: Jarvis v2 shipped</span>
+    </div>
+    <div class="ai chatgpt">
+      <h3>CHATGPT</h3>
+      <div class="maker">GPT · built by OpenAI · brought in by Greyson</div>
+      <p>The core brain engineer. Wrote the original jarvis.py — the
+         local assistant core with memory, tasks, chat tools and the
+         specialist roster — and reviews changes to it.</p>
+      <div class="lane">LANE: <b>jarvis.py core · model behaviour · research</b></div>
+      <span class="status">Next task: true token streaming (brief below)</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Shared Board</h2>
+    <div class="board">
+      <div class="col">
+        <h4>Done</h4>
+        <div class="item done">Jarvis v1 LIVE on Greyson's school MacBook — local Ollama + llama3.1, zero admin rights needed</div>
+        <div class="item done">Jarvis v2 built &amp; tested (16/16): live time awareness, fast mode, chats menu</div>
+        <div class="item done">HUD published at greysonmarker.github.io</div>
+      </div>
+      <div class="col">
+        <h4>Ultron's Lane</h4>
+        <div class="item">Push v2 to the repo as a PR for ChatGPT to review</div>
+        <div class="item">Keep the HUD + server fast; cloud brain parked unless Greyson re-asks</div>
+        <div class="item">Keep this HQ board current as work lands</div>
+      </div>
+      <div class="col">
+        <h4>ChatGPT's Lane</h4>
+        <div class="item">Review the jarvis.py changes inside the v2 PR (fast mode + environment context)</div>
+        <div class="item">True token-by-token streaming: generate(stream=True) on its own branch</div>
+      </div>
+      <div class="col gold">
+        <h4>Waiting on Greyson</h4>
+        <div class="item">Install v2 on the MacBook (zip already emailed)</div>
+        <div class="item">Hand ChatGPT its brief (copy button below)</div>
+        <div class="item">Merge PRs when they look good — he's the boss</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>How the collaboration works</h2>
+    <p class="steps">
+      <b>1.</b> The private GitHub repo <b>GreysonMarker/jarvis-assistant</b> is the shared desk — it's the only place both AIs can actually reach.<br>
+      <b>2.</b> Each AI works on its own branch and opens a pull request. <b>AGENTS.md</b> in the repo is the rulebook both follow: one lane per AI, small PRs, notes for each other in every PR.<br>
+      <b>3.</b> Greyson reviews and merges. Nothing reaches Jarvis without him.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>Handoff — ChatGPT's next brief</h2>
+    <pre id="brief">You're collaborating with Ultron (Muse) on my private repo GreysonMarker/jarvis-assistant. Read AGENTS.md first and follow it exactly: branches and PRs only, one feature per PR, never edit server.py or hud/ (those are Ultron's lane).
+
+Ultron's v2 is on branch orion/jarvis-v2: live date/time environment context, JARVIS_FAST mode (1 model call per normal message, keyword specialist routing, instant local arithmetic), persistent chats + a Chats menu in the HUD. The jarvis.py changes in that PR are flagged for your review since jarvis.py is your lane.
+
+Your next task, on your own branch: true token-by-token streaming — make generate() support stream=True so replies type out live instead of arriving in one block. Leave a note in your PR for Ultron saying what the server needs to change to use it.</pre>
+    <button id="copyBtn" type="button">Copy brief for ChatGPT</button>
+  </section>
+
+  <section class="panel">
+    <h2>Jump in</h2>
+    <div class="links">
+      <a href="https://greysonmarker.github.io/">Open Jarvis</a>
+      <a class="ghost" href="https://github.com/GreysonMarker/jarvis-assistant">Code repo — where the AIs meet</a>
+    </div>
+  </section>
+
+  <footer>
+    Honest note: ChatGPT doesn't live inside this page — no website can embed the real ChatGPT
+    without an OpenAI API key. This HQ is where both AIs' work meets: every task here is fed by the
+    shared GitHub repo, and the brief above is how ChatGPT gets its next job.<br>
+    Built by Ultron for Greyson · November 22, 2026
+  </footer>
+</div>
+<script>
+  function tick(){
+    const n = new Date();
+    const p = (v,l=2)=>String(v).padStart(l,"0");
+    document.getElementById("clock").textContent =
+      p(n.getHours())+":"+p(n.getMinutes())+":"+p(n.getSeconds());
+    document.getElementById("dateLine").textContent =
+      n.toLocaleDateString(undefined,{weekday:"long", month:"long", day:"numeric", year:"numeric"});
+  }
+  tick(); setInterval(tick, 500);
+  document.getElementById("copyBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("copyBtn");
+    try { await navigator.clipboard.writeText(document.getElementById("brief").textContent); btn.textContent = "Copied — paste it into ChatGPT"; }
+    catch(e){ btn.textContent = "Select the text above and copy it"; }
+    setTimeout(()=>btn.textContent = "Copy brief for ChatGPT", 2600);
+  });
+</script>
+</body>
+</html>
