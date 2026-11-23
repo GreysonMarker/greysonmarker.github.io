@@ -54,9 +54,10 @@ The rulebook is <code>AGENTS.md</code> in that repo. Public pages: the HUD at
       standard installer fails; the workaround is part of the project lore now),
       <code>llama3.1</code> pulled (4.9 GB), server running at
       <code>http://127.0.0.1:8765</code>, real model answers in the HUD.</li>
-  <li><b>Jarvis v2 is built and tested by Ultron</b> (16/16 tests passing) and is being
-      delivered to the MacBook as <code>jarvis-files-v2.zip</code> and to the repo as a
-      pull request on branch <code>orion/jarvis-v2</code>. Details below.</li>
+  <li><b>Jarvis v2 was delivered</b> to the MacBook by email on Nov 22
+      (<code>jarvis-files-v2.zip</code>); its repo PR is branch <code>orion/jarvis-v2</code>.
+      <b>Jarvis v3 (Nov 23)</b> adds deliberation mode — see below. Test suite is at
+      23/23 passing.</li>
   <li>The old ChatGPT-hosted copy (chatgpt.site) is <b>retired</b> — Greyson rejected
       the domain and the slow on-device model. Do not treat it as current.</li>
   <li>The Cloudflare cloud-brain idea (for phone use) is <b>parked</b> unless Greyson re-asks.</li>
@@ -83,6 +84,16 @@ in the PR if you disagree.</p>
       (<code>arithmetic()</code>) with zero model calls.</li>
   <li><b><code>generate()</code></b> now sends <code>keep_alive</code>
       (env <code>JARVIS_KEEP_ALIVE</code>, default 30m) so the model stays loaded.</li>
+  <li><b>Deliberation mode (v3, Nov 23 — also flagged for your review):</b> open-ended
+      questions with no single right answer are detected locally by
+      <code>deliberation()</code> (keyword patterns, no model call) and answered with a
+      reasoning scaffold inside the single fast-mode answer call: a principles framework
+      for normative questions ("Should a doctor ever withhold information...?"), a
+      decision framework for personal choices ("Should I...?", "pros and cons of..."),
+      bottom-line-first structure, a 220-word cap, and a token cap
+      (<code>generate()</code> gained an optional <code>options</code> parameter;
+      deliberation passes <code>num_predict: 384</code>) to hold the ~10s budget.
+      Specialist consults are skipped on deliberation turns.</li>
   <li><b>Server/HUD (Ultron's lane, no review needed):</b> chats now persist per user as
       JSON, <code>GET /api/chats</code> lists them, <code>GET /api/chats/&lt;id&gt;</code>
       returns history, <code>DELETE</code> removes; the HUD has a Chats panel to swap
@@ -119,7 +130,7 @@ Ultron updates this page and the HQ board with the new state. If you cannot reac
 repo from where you are, give Greyson the exact changed files/code and tell him to
 pass them to Ultron, who will integrate and publish them.</p>
 
-<p><i>Last updated by Ultron: November 22, 2026, ~10:30 PM CST. Next update lands here
+<p><i>Last updated by Ultron: November 23, 2026, ~1:00 PM CST. Next update lands here
 whenever the project state changes.</i></p>
 
 <button onclick="navigator.clipboard.writeText(document.body.innerText).then(()=>{this.textContent='Copied — paste it into ChatGPT'; setTimeout(()=>this.textContent='Copy this whole briefing as text',2400);})">Copy this whole briefing as text</button>
