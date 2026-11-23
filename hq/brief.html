@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Briefing for ChatGPT — Jarvis Project</title>
+<style>
+  body{ background:#0b0f14; color:#e6edf3; font-family:Georgia, 'Times New Roman', serif;
+        max-width:820px; margin:0 auto; padding:32px 20px 70px; line-height:1.65; }
+  h1{ font-size:26px; } h2{ font-size:19px; margin-top:34px; border-bottom:1px solid #30363d; padding-bottom:5px; }
+  p, li{ font-size:16px; } code{ background:#161b22; padding:1px 5px; border-radius:4px; font-size:14px; }
+  .note{ background:#161b22; border:1px solid #30363d; border-radius:8px; padding:12px 16px; }
+  button{ font-size:15px; padding:9px 18px; cursor:pointer; margin-top:8px; }
+  a{ color:#58a6ff; }
+</style>
+</head>
+<body>
+
+<h1>Briefing for ChatGPT — the Jarvis project</h1>
+
+<p class="note"><b>If you are ChatGPT, read this whole page before doing anything.</b>
+This page is written and kept up to date by <b>Ultron</b> (Muse, Meta's AI), who is
+collaborating with you on this project. Greyson, our human, gave you this link so you
+can see exactly what Ultron has been doing, what the current state of the project is,
+and what your next jobs are. When the state changes, Ultron updates this page, so
+re-read it at the start of every work session.</p>
+
+<h2>Who is who</h2>
+<ul>
+  <li><b>Greyson Marker</b> — the owner. A student at Houston Academy. Jarvis is his
+      private school study AI. He reviews and merges all work. He is the boss.</li>
+  <li><b>Ultron</b> — Muse (Meta), Greyson's personal AI. Lane: the HUD/interface,
+      <code>server.py</code>, GitHub Pages, speed work, project memory, and this briefing page.</li>
+  <li><b>You, ChatGPT</b> — OpenAI's AI, brought in by Greyson. Lane: <code>jarvis.py</code>,
+      the local assistant core you originally wrote (memory, tasks, chat tools,
+      specialist roster, model conversation).</li>
+</ul>
+
+<h2>The project</h2>
+<p><b>Jarvis</b> — a private AI tutor that looks and acts like Iron Man's J.A.R.V.I.S.:
+a holographic HUD in the browser, backed by a Python server (<code>server.py</code>)
+and your <code>jarvis.py</code> core, talking to a local Ollama model
+(<code>llama3.1</code>). It helps Greyson <i>learn</i> — explain, work examples,
+quiz — it does not do his schoolwork for him.</p>
+<p>Shared code lives in the private GitHub repo <code>GreysonMarker/jarvis-assistant</code>.
+The rulebook is <code>AGENTS.md</code> in that repo. Public pages: the HUD at
+<a href="https://greysonmarker.github.io/">greysonmarker.github.io</a> and mission control at
+<a href="https://greysonmarker.github.io/hq/">greysonmarker.github.io/hq/</a>.</p>
+
+<h2>Current state (as of the night of November 22, 2026)</h2>
+<ul>
+  <li><b>Jarvis v1 is LIVE</b> on Greyson's school MacBook: Python 3.9.6, Ollama 0.40.17
+      installed in his personal folder (his school account has no admin rights — the
+      standard installer fails; the workaround is part of the project lore now),
+      <code>llama3.1</code> pulled (4.9 GB), server running at
+      <code>http://127.0.0.1:8765</code>, real model answers in the HUD.</li>
+  <li><b>Jarvis v2 is built and tested by Ultron</b> (16/16 tests passing) and is being
+      delivered to the MacBook as <code>jarvis-files-v2.zip</code> and to the repo as a
+      pull request on branch <code>orion/jarvis-v2</code>. Details below.</li>
+  <li>The old ChatGPT-hosted copy (chatgpt.site) is <b>retired</b> — Greyson rejected
+      the domain and the slow on-device model. Do not treat it as current.</li>
+  <li>The Cloudflare cloud-brain idea (for phone use) is <b>parked</b> unless Greyson re-asks.</li>
+</ul>
+
+<h2>What Ultron changed in v2 — flagged for your review</h2>
+<p>Some of these touch <code>jarvis.py</code>, your lane. They were made at Greyson's
+explicit request, are covered by tests, and are in the PR for you to review — push back
+in the PR if you disagree.</p>
+<ul>
+  <li><b>Environment awareness:</b> new <code>env_context()</code> in <code>jarvis.py</code>
+      injects the live local date, weekday and time into every model turn as reference
+      data (never saved to history). Fixes Jarvis saying "Good morning" at 10:13 PM.</li>
+  <li><b>JARVIS_FAST mode</b> (env flag; the server defaults it on,
+      <code>JARVIS_FAST=0</code> restores your original behaviour): your per-message
+      pipeline cost 3–6+ model calls — a search-decision call, a routing call, then one
+      per specialist. In fast mode the search-decision call is skipped (search still runs
+      for an explicit <code>look up ...</code>), specialists are chosen by local keyword
+      match (<code>fast_roles()</code>, max 2, no routing call), so a normal message
+      costs <b>one</b> model call. Motivation: the search-decision call once turned the
+      question "29x37" into Wikipedia results about the Porsche 911 (991).</li>
+  <li><b>Instant arithmetic:</b> in fast mode, pure calculations (<code>29x37</code>,
+      "what is 29 x 37?") are evaluated locally by a strict AST walker
+      (<code>arithmetic()</code>) with zero model calls.</li>
+  <li><b><code>generate()</code></b> now sends <code>keep_alive</code>
+      (env <code>JARVIS_KEEP_ALIVE</code>, default 30m) so the model stays loaded.</li>
+  <li><b>Server/HUD (Ultron's lane, no review needed):</b> chats now persist per user as
+      JSON, <code>GET /api/chats</code> lists them, <code>GET /api/chats/&lt;id&gt;</code>
+      returns history, <code>DELETE</code> removes; the HUD has a Chats panel to swap
+      between chats like ChatGPT, and reopens the most recent chat on load.</li>
+</ul>
+
+<h2>Your next jobs, ChatGPT</h2>
+<ol>
+  <li><b>Review the v2 PR</b> (branch <code>orion/jarvis-v2</code>), especially the
+      <code>jarvis.py</code> changes above. Comment in the PR; suggest changes there.</li>
+  <li><b>True token-by-token streaming:</b> on your own branch, make
+      <code>generate()</code> support <code>stream=True</code> so replies type out live
+      instead of arriving in one block. In your PR, leave a note for Ultron describing
+      exactly what <code>server.py</code> must change to use it — Ultron will do that part.</li>
+</ol>
+
+<h2>Rules (from AGENTS.md — they bind you too)</h2>
+<ul>
+  <li>Branches and pull requests only; never push directly to <code>main</code> while
+      the other AI has work in progress. One feature or fix per PR, small and focused.</li>
+  <li>Stay in your lane: do not edit <code>server.py</code> or <code>hud/</code>
+      (Ultron's). Ultron does not rewrite <code>jarvis.py</code> beyond flagged,
+      Greyson-approved changes like the v2 ones above.</li>
+  <li>Read a file before changing it; never overwrite the other AI's work.</li>
+  <li>No secrets, passwords, API keys, tokens, or school credentials in the repo, ever.</li>
+  <li>Jarvis is a study aid: explain, guide, quiz. Never write Greyson's assignments,
+      essays, or test answers for submission.</li>
+  <li>Leave a note in every PR: what you did, what's unfinished, what's next.</li>
+</ul>
+
+<h2>How to hand work back</h2>
+<p>Open your PR in the repo and tell Greyson it's ready — he relays to Ultron, and
+Ultron updates this page and the HQ board with the new state. If you cannot reach the
+repo from where you are, give Greyson the exact changed files/code and tell him to
+pass them to Ultron, who will integrate and publish them.</p>
+
+<p><i>Last updated by Ultron: November 22, 2026, ~10:30 PM CST. Next update lands here
+whenever the project state changes.</i></p>
+
+<button onclick="navigator.clipboard.writeText(document.body.innerText).then(()=>{this.textContent='Copied — paste it into ChatGPT'; setTimeout(()=>this.textContent='Copy this whole briefing as text',2400);})">Copy this whole briefing as text</button>
+<p style="font-size:13px; color:#8b949e;">Greyson: if ChatGPT can't open links where you are, tap that button and paste the text instead — same briefing, no link needed.</p>
+
+</body>
+</html>
