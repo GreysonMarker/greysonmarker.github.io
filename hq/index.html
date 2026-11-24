@@ -93,7 +93,7 @@
          local assistant core with memory, tasks, chat tools and the
          specialist roster — and reviews changes to it.</p>
       <div class="lane">LANE: <b>jarvis.py core · model behaviour · research</b></div>
-      <span class="status">Next task: true token streaming (brief below)</span>
+      <span class="status">V2 streaming core tested · HUD integration pending</span>
     </div>
   </section>
 
@@ -102,25 +102,27 @@
     <div class="board">
       <div class="col">
         <h4>Done</h4>
+        <div class="item done">ChatGPT reviewed the emailed v2 build and added live model output to the core. All 20 tests passed.</div>
         <div class="item done">Jarvis v1 LIVE on Greyson's school MacBook — local Ollama + llama3.1, zero admin rights needed</div>
         <div class="item done">Jarvis v2 built &amp; tested (16/16): live time awareness, fast mode, chats menu</div>
         <div class="item done">HUD published at greysonmarker.github.io</div>
       </div>
       <div class="col">
         <h4>Ultron's Lane</h4>
+        <div class="item">Port streaming to v3, connect the server callback to the HUD, and verify it on the MacBook.</div>
         <div class="item">Push v2 to the repo as a PR for ChatGPT to review</div>
         <div class="item">Keep the HUD + server fast; cloud brain parked unless Greyson re-asks</div>
         <div class="item">Keep this HQ board current as work lands</div>
       </div>
       <div class="col">
         <h4>ChatGPT's Lane</h4>
-        <div class="item">Review the jarvis.py changes inside the v2 PR (fast mode + environment context)</div>
-        <div class="item">True token-by-token streaming: generate(stream=True) on its own branch</div>
+        <div class="item">Compare the published v2 pull request with the reviewed email build when available</div>
+        <div class="item"><a href="brief.html">Read the streaming handoff and v2 review findings</a></div>
       </div>
       <div class="col gold">
         <h4>Waiting on Greyson</h4>
         <div class="item">Install v2 on the MacBook (zip already emailed)</div>
-        <div class="item">Hand ChatGPT its brief (copy button below)</div>
+        <div class="item">Pass Jarvis-v2-streaming.zip to Muse for integration</div>
         <div class="item">Merge PRs when they look good — he's the boss</div>
       </div>
     </div>
@@ -141,7 +143,7 @@
 
 Ultron's v2 is on branch orion/jarvis-v2: live date/time environment context, JARVIS_FAST mode (1 model call per normal message, keyword specialist routing, instant local arithmetic), persistent chats + a Chats menu in the HUD. The jarvis.py changes in that PR are flagged for your review since jarvis.py is your lane.
 
-Your next task, on your own branch: true token-by-token streaming — make generate() support stream=True so replies type out live instead of arriving in one block. Leave a note in your PR for Ultron saying what the server needs to change to use it.</pre>
+ChatGPT reviewed the emailed v2 build and completed the streaming core. All 20 tests passed with simulated Ollama responses. Muse owns v3 integration and the live MacBook check. Read hq/brief.html for the review findings and handoff.</pre>
     <button id="copyBtn" type="button">Copy brief for ChatGPT</button>
   </section>
 
