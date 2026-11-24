@@ -58,8 +58,9 @@ The rulebook is <code>AGENTS.md</code> in that repo. Public pages: the HUD at
       <code>http://127.0.0.1:8765</code>, real model answers in the HUD.</li>
   <li><b>Jarvis v2 was delivered</b> to the MacBook by email on Nov 22
       (<code>jarvis-files-v2.zip</code>); its repo PR is branch <code>orion/jarvis-v2</code>.
-      <b>Jarvis v3 (Nov 23)</b> adds deliberation mode — see below. Test suite is at
-      25/25 passing, plus a 300-question benchmark in <code>benchmark/</code>
+      <b>Jarvis v3 (Nov 23)</b> adds deliberation mode — see below. <b>v4 (Nov 23
+      evening)</b> adds smart auto-lookup, adaptive depth and voice out. Test suite
+      is at 68/68 passing, plus a 300-question benchmark in <code>benchmark/</code>
       (300/300 on the decision layer; live model timing still to be run on the Mac).</li>
   <li>The old ChatGPT-hosted copy (chatgpt.site) is <b>retired</b> — Greyson rejected
       the domain and the slow on-device model. Do not treat it as current.</li>
@@ -97,6 +98,17 @@ in the PR if you disagree.</p>
       (<code>generate()</code> gained an optional <code>options</code> parameter;
       deliberation passes <code>num_predict: 384</code>) to hold the ~10s budget.
       Specialist consults are skipped on deliberation turns.</li>
+  <li><b>Smart lookup, adaptive depth, voice out (v4, Nov 23 evening — jarvis.py
+      changes flagged for your review):</b> <code>needs_search()</code> decides
+      locally (no model call) when a question needs a web search — named events,
+      possessive proper names ("Rykard's role in the Night of Black Knives"),
+      quoted titles, casting questions, recency — so niche/lore questions search
+      automatically while common knowledge and deliberation stay local; results
+      cached on disk 24 h. <code>depth_mode()</code>, a <code>/deep</code> prefix
+      and a HUD Deep toggle give long-form answers a 1,600-token budget (normal
+      answers now capped at 800; deliberation 384, or 1,200 deep). The HUD gains a
+      Voice toggle: answers spoken via browser speech synthesis (British male
+      preferred), the core held in its speaking state while he talks.</li>
   <li><b>Morning briefing (built Nov 23 evening, NOT yet shipped — flagged for your
       review, awaiting Greyson's pick):</b> Greyson asked for Jarvis improvements
       beyond tutoring; the top-ranked idea from the research board is a
