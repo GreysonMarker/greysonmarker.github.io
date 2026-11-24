@@ -37,11 +37,13 @@ re-read it at the start of every work session.</p>
 </ul>
 
 <h2>The project</h2>
-<p><b>Jarvis</b> — a private AI tutor that looks and acts like Iron Man's J.A.R.V.I.S.:
+<p><b>Jarvis</b> — Greyson's private personal AI, his tool, explicitly <b>not a
+tutor</b> (his correction, Nov 23), that looks and acts like Iron Man's J.A.R.V.I.S.:
 a holographic HUD in the browser, backed by a Python server (<code>server.py</code>)
 and your <code>jarvis.py</code> core, talking to a local Ollama model
-(<code>llama3.1</code>). It helps Greyson <i>learn</i> — explain, work examples,
-quiz — it does not do his schoolwork for him.</p>
+(<code>llama3.1</code>). It answers his questions directly and completely and helps
+with whatever he is working on; explaining and quizzing are modes he can request,
+not the default. It does not write work for him to submit as his own.</p>
 <p>Shared code lives in the private GitHub repo <code>GreysonMarker/jarvis-assistant</code>.
 The rulebook is <code>AGENTS.md</code> in that repo. Public pages: the HUD at
 <a href="https://greysonmarker.github.io/">greysonmarker.github.io</a> and mission control at
@@ -95,16 +97,49 @@ in the PR if you disagree.</p>
       (<code>generate()</code> gained an optional <code>options</code> parameter;
       deliberation passes <code>num_predict: 384</code>) to hold the ~10s budget.
       Specialist consults are skipped on deliberation turns.</li>
+  <li><b>Morning briefing (built Nov 23 evening, NOT yet shipped — flagged for your
+      review, awaiting Greyson's pick):</b> Greyson asked for Jarvis improvements
+      beyond tutoring; the top-ranked idea from the research board is a
+      <code>/briefing</code> command. New file <code>briefing.py</code> (stdlib only,
+      no key): Houston weather from Open-Meteo, one "on this day" event from
+      Wikipedia, ISS position from WhereTheISS.at, next launch from Launch Library 2,
+      moon phase computed locally, plus open tasks and saved memories. No model call.
+      Each source cached (launch 1h, weather 30 min) and fails independently.
+      <code>jarvis.py</code> change is small: <code>/briefing</code> added to
+      <code>HELP</code> and to <code>command()</code>. It is built and tested
+      (54/54 tests pass including the new <code>test_briefing.py</code> and
+      <code>test_instant_tools.py</code>) but is
+      <b>not</b> in the v3 zip Greyson already has — it ships only if he picks it,
+      on top of v3, after he installs v3.</li>
+  <li><b>Instant tools (built Nov 23 evening, NOT yet shipped — flagged for your
+      review, awaiting Greyson's pick):</b> the #2 idea from the same research
+      board. New file <code>instant_tools.py</code> (stdlib only, no key):
+      timer, open an app, screenshot, volume, speak aloud (<code>say</code>),
+      battery — all via macOS built-ins, zero model calls, instant. Plain
+      wording ("set a timer for 10 minutes", "take a screenshot") and slash
+      commands (<code>/timer 10m</code>, <code>/open Safari</code>,
+      <code>/screenshot</code>, <code>/volume 50</code>, <code>/say hello</code>).
+      <code>jarvis.py</code> change: the new commands in <code>HELP</code> and
+      <code>command()</code>, plus a local dispatch in <code>reply()</code>
+      before the model call. Natural "open X" only fires for a short
+      allowlist of common apps. A timer lives inside the running Jarvis
+      process. Like the briefing, it is built and tested but <b>not</b> in
+      the v3 zip — it ships with the briefing, on top of v3, if he picks it.</li>
   <li><b>Server/HUD (Ultron's lane, no review needed):</b> chats now persist per user as
       JSON, <code>GET /api/chats</code> lists them, <code>GET /api/chats/&lt;id&gt;</code>
       returns history, <code>DELETE</code> removes; the HUD has a Chats panel to swap
       between chats like ChatGPT, and reopens the most recent chat on load.</li>
 </ul>
 
-<h2>Streaming handoff · November 23</h2>
-<p>ChatGPT reviewed the emailed v2 build and added live Ollama text to <code>jarvis.py</code>. All 20 tests passed with simulated model responses. One test checks that the first piece reaches the caller before the next piece is read.</p>
-<p><b>Next for Muse:</b> Port the callback from <code>Jarvis-v2-streaming.zip</code> into v3, preserving its <code>options</code> parameter and deliberation token limit. Follow <code>MUSE.md</code> to forward each piece from <code>ChatSession.reply</code> to the HUD. Verify on the MacBook that text appears during generation and the finished reply is saved once.</p>
-<p><b>V2 review findings:</b> Instant calculations disappear from chat history, very small results can display as zero, and a trailing factorial sign can be discarded. Check these cases against v3.</p>
+<h2>Your next jobs, ChatGPT</h2>
+<ol>
+  <li><b>Review the v2 PR</b> (branch <code>orion/jarvis-v2</code>), especially the
+      <code>jarvis.py</code> changes above. Comment in the PR; suggest changes there.</li>
+  <li><b>True token-by-token streaming:</b> on your own branch, make
+      <code>generate()</code> support <code>stream=True</code> so replies type out live
+      instead of arriving in one block. In your PR, leave a note for Ultron describing
+      exactly what <code>server.py</code> must change to use it — Ultron will do that part.</li>
+</ol>
 
 <h2>Rules (from AGENTS.md — they bind you too)</h2>
 <ul>
@@ -115,8 +150,9 @@ in the PR if you disagree.</p>
       Greyson-approved changes like the v2 ones above.</li>
   <li>Read a file before changing it; never overwrite the other AI's work.</li>
   <li>No secrets, passwords, API keys, tokens, or school credentials in the repo, ever.</li>
-  <li>Jarvis is a study aid: explain, guide, quiz. Never write Greyson's assignments,
-      essays, or test answers for submission.</li>
+  <li>Jarvis is Greyson's tool and answers directly — do not deflect his questions
+      into quizzes or practice. Never write his assignments, essays, or test answers
+      for submission.</li>
   <li>Leave a note in every PR: what you did, what's unfinished, what's next.</li>
 </ul>
 
@@ -126,7 +162,7 @@ Ultron updates this page and the HQ board with the new state. If you cannot reac
 repo from where you are, give Greyson the exact changed files/code and tell him to
 pass them to Ultron, who will integrate and publish them.</p>
 
-<p><i>Last updated by Ultron: November 23, 2026, ~1:00 PM CST. Next update lands here
+<p><i>Last updated by Ultron: November 23, 2026, ~8:30 PM CST. Next update lands here
 whenever the project state changes.</i></p>
 
 <button onclick="navigator.clipboard.writeText(document.body.innerText).then(()=>{this.textContent='Copied — paste it into ChatGPT'; setTimeout(()=>this.textContent='Copy this whole briefing as text',2400);})">Copy this whole briefing as text</button>
