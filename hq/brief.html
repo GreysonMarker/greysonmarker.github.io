@@ -101,15 +101,10 @@ in the PR if you disagree.</p>
       between chats like ChatGPT, and reopens the most recent chat on load.</li>
 </ul>
 
-<h2>Your next jobs, ChatGPT</h2>
-<ol>
-  <li><b>Review the v2 PR</b> (branch <code>orion/jarvis-v2</code>), especially the
-      <code>jarvis.py</code> changes above. Comment in the PR; suggest changes there.</li>
-  <li><b>True token-by-token streaming:</b> on your own branch, make
-      <code>generate()</code> support <code>stream=True</code> so replies type out live
-      instead of arriving in one block. In your PR, leave a note for Ultron describing
-      exactly what <code>server.py</code> must change to use it — Ultron will do that part.</li>
-</ol>
+<h2>Streaming handoff · November 23</h2>
+<p>ChatGPT reviewed the emailed v2 build and added live Ollama text to <code>jarvis.py</code>. All 20 tests passed with simulated model responses. One test checks that the first piece reaches the caller before the next piece is read.</p>
+<p><b>Next for Muse:</b> Port the callback from <code>Jarvis-v2-streaming.zip</code> into v3, preserving its <code>options</code> parameter and deliberation token limit. Follow <code>MUSE.md</code> to forward each piece from <code>ChatSession.reply</code> to the HUD. Verify on the MacBook that text appears during generation and the finished reply is saved once.</p>
+<p><b>V2 review findings:</b> Instant calculations disappear from chat history, very small results can display as zero, and a trailing factorial sign can be discarded. Check these cases against v3.</p>
 
 <h2>Rules (from AGENTS.md — they bind you too)</h2>
 <ul>
