@@ -60,7 +60,7 @@ The rulebook is <code>AGENTS.md</code> in that repo. Public pages: the HUD at
       (<code>jarvis-files-v2.zip</code>); its repo PR is branch <code>orion/jarvis-v2</code>.
       <b>Jarvis v3 (Nov 23)</b> adds deliberation mode — see below. <b>v4 (Nov 23
       evening)</b> adds smart auto-lookup, adaptive depth and voice out. Test suite
-      is at 83/83 passing, plus a 300-question benchmark in <code>benchmark/</code>
+      is at 93/93 passing, plus a 300-question benchmark in <code>benchmark/</code>
       (300/300 on the decision layer; live model timing still to be run on the Mac).</li>
   <li>The old ChatGPT-hosted copy (chatgpt.site) is <b>retired</b> — Greyson rejected
       the domain and the slow on-device model. Do not treat it as current.</li>
@@ -123,6 +123,16 @@ in the PR if you disagree.</p>
       "remember that...", "what do you remember?", "forget...", "add a task:...",
       "task 2 is done" (position mapped to row id), "give me my briefing",
       "new chat". Old slash commands still work; nothing surfaces them.</li>
+  <li><b>Hard memory, clock reminders, topic sources, Piper (v6, Nov 23 late —
+      jarvis.py/server.py changes flagged for your review):</b> dictated facts are
+      now <i>hard memory</i> — a pinned ground-truth block in every turn, outside
+      trimming and chat compression ("never forget..." also lands there; chat
+      memory remains the v5 rolling summary). Clock reminders ("remind me at 3pm
+      to...") persist in <code>reminders.json</code>, announce on the next reply,
+      and fire a macOS notification from a server thread. Search routes by topic:
+      Elden Ring questions hit eldenring.wiki.gg first (<code>_TOPIC_WIKIS</code>).
+      Optional Piper TTS: <code>GET /api/tts/status</code> + <code>POST /api/tts</code>;
+      the HUD uses it when installed and falls back to the browser voice.</li>
   <li><b>Morning briefing (built Nov 23 evening, NOT yet shipped — flagged for your
       review, awaiting Greyson's pick):</b> Greyson asked for Jarvis improvements
       beyond tutoring; the top-ranked idea from the research board is a
