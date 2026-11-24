@@ -60,7 +60,7 @@ The rulebook is <code>AGENTS.md</code> in that repo. Public pages: the HUD at
       (<code>jarvis-files-v2.zip</code>); its repo PR is branch <code>orion/jarvis-v2</code>.
       <b>Jarvis v3 (Nov 23)</b> adds deliberation mode — see below. <b>v4 (Nov 23
       evening)</b> adds smart auto-lookup, adaptive depth and voice out. Test suite
-      is at 71/71 passing, plus a 300-question benchmark in <code>benchmark/</code>
+      is at 83/83 passing, plus a 300-question benchmark in <code>benchmark/</code>
       (300/300 on the decision layer; live model timing still to be run on the Mac).</li>
   <li>The old ChatGPT-hosted copy (chatgpt.site) is <b>retired</b> — Greyson rejected
       the domain and the slow on-device model. Do not treat it as current.</li>
@@ -113,6 +113,16 @@ in the PR if you disagree.</p>
       the final user message; <code>num_ctx</code> pinned at 8192. The HUD gains a
       Voice toggle: answers spoken via browser speech synthesis (local British
       male preferred), the core held in its speaking state while he talks.</li>
+  <li><b>Long-chat memory + plain-words controls (v5, Nov 23 late — jarvis.py
+      changes flagged for your review):</b> history compression replaces the old
+      silent 20-message cutoff — older turns fold into a compressed-memory note
+      (start preserved, no model call), newest 16 verbatim; 200-question chats are
+      tested. Slash-command dumps are gone: unknown <code>/...</code> input is
+      treated as plain words, the no-model reply is a friendly sentence, and
+      <code>/help</code> speaks plain words. New <code>natural_command()</code>:
+      "remember that...", "what do you remember?", "forget...", "add a task:...",
+      "task 2 is done" (position mapped to row id), "give me my briefing",
+      "new chat". Old slash commands still work; nothing surfaces them.</li>
   <li><b>Morning briefing (built Nov 23 evening, NOT yet shipped — flagged for your
       review, awaiting Greyson's pick):</b> Greyson asked for Jarvis improvements
       beyond tutoring; the top-ranked idea from the research board is a
